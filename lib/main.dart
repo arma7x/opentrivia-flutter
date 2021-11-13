@@ -47,11 +47,29 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final _formKey = GlobalKey<FormState>();
 
+  bool _loading = true;
+
   _MyHomePageState() {
     category = categories[0];
     difficulty = difficulties[0];
     type = types[0];
     getCategory();
+  }
+
+  void _loadingDialog(bool show) {
+    if (show == true) {
+      showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (BuildContext _) {
+          return AlertDialog(
+            content: Container(child: new LinearProgressIndicator()),
+          );
+        },
+      );
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 
   void getCategory() async {
@@ -63,21 +81,31 @@ class _MyHomePageState extends State<MyHomePage> {
         for (var i in responseBody['trivia_categories']) {
           _categories.add(Map<String, dynamic>.from(i));
         }
-        setState(() { categories = _categories; });
-        final snackBar = SnackBar(content: Text('Yay! A SnackBar!'));
+        setState(() {
+          categories = _categories;
+          _loading = false;
+        });
+        final snackBar = SnackBar(content: Text('Ready'));
         ScaffoldMessenger.of(context).showSnackBar(snackBar);
       } else {
+        setState(() {
+          _loading = false;
+        });
         final snackBar = SnackBar(content: Text('Server Error'));
         Scaffold.of(context).showSnackBar(snackBar);
       }
     } on Exception catch(e) {
       print(e);
+      setState(() {
+        _loading = false;
+      });
       final snackBar = SnackBar(content: Text('Network Error'));
       Scaffold.of(context).showSnackBar(snackBar);
     }
   }
 
   void generateQuiz() async {
+    _loadingDialog(true);
     try {
       final response = await Api.generateQuiz(
         int.parse(_amount.text),
@@ -89,8 +117,12 @@ class _MyHomePageState extends State<MyHomePage> {
       if (responseBody['results'].length > 0) {
         List<Map<String, dynamic>> _result = [];
         for (var i in responseBody['results']) {
-          _result.add(Map<String, dynamic>.from(i));
+          Map<String, dynamic> q = Map<String, dynamic>.from(i);
+          q['incorrect_answers'].add(q['correct_answer']);
+          q['incorrect_answers'].shuffle();
+          _result.add(q);
         }
+        _loadingDialog(false);
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) {
@@ -98,10 +130,12 @@ class _MyHomePageState extends State<MyHomePage> {
           }),
         );
       } else {
-        final snackBar = SnackBar(content: Text('Insufficient Question'));
+        _loadingDialog(false);
+        final snackBar = SnackBar(content: Text('Adjust your requirement'));
         Scaffold.of(context).showSnackBar(snackBar);
       }
     } on Exception catch(e) {
+      _loadingDialog(false);
       print(e);
       final snackBar = SnackBar(content: Text('Network Error'));
       Scaffold.of(context).showSnackBar(snackBar);
@@ -128,8 +162,8 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            _loading ? new LinearProgressIndicator(minHeight:5) : SizedBox(height: 5),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Form(
@@ -241,9 +275,6 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Generating Quiz')),
-                            );
                             generateQuiz();
                           }
                         },
