@@ -1,6 +1,6 @@
 # opentrivia
 
-A new Flutter project.
+An OpenTrivia(https://opentdb.com/) app build with Flutter.
 
 ## Getting Started
 
