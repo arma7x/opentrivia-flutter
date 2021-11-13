@@ -152,15 +152,42 @@ class _MyHomePageState extends State<MyHomePage> {
           Padding(
             padding: const EdgeInsets.only(right: 20.0),
             child: GestureDetector(
-              onTap: () {},
+              onTap: () {
+                showDialog<void>(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('Info'),
+                      content: SingleChildScrollView(
+                        child: ListBody(
+                          children: const <Widget>[
+                            Text('- API by https://opentdb.com/'),
+                            SizedBox(height: 10),
+                            Text('- All data provided by the API is available under the Creative Commons Attribution-ShareAlike 4.0 International License'),
+                          ],
+                        ),
+                      ),
+                      actions: <Widget>[
+                        TextButton(
+                          child: const Text('Close'),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
               child: const Icon(
-                  Icons.help
+                Icons.help
               ),
             )
           ),
         ],
       ),
-      body: Center(
+      body: Container(
         child: Column(
           children: <Widget>[
             _loading ? new LinearProgressIndicator(minHeight:5) : SizedBox(height: 5),

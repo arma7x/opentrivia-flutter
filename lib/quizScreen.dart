@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:html_unescape/html_unescape.dart';
 
 class QuizScreen extends StatefulWidget {
 
@@ -12,6 +13,7 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
 
+  final unescape = HtmlUnescape();
   final GlobalKey<ScaffoldState> ctx = new GlobalKey<ScaffoldState>();
 
   int _index = 0;
@@ -32,7 +34,7 @@ class _QuizScreenState extends State<QuizScreen> {
     for(var i=0;i<questions.length;i++){
       if (questions[i]['selected_answers'] == null) {
         miss.add(i+1);
-      } else if (Uri.decodeFull(questions[i]['selected_answers']) == Uri.decodeFull(questions[i]['correct_answer'])) {
+      } else if (unescape.convert(questions[i]['selected_answers']) == unescape.convert(questions[i]['correct_answer'])) {
         _score++;
       }
     }
@@ -41,6 +43,7 @@ class _QuizScreenState extends State<QuizScreen> {
       ctx.currentState?.showSnackBar(snackBar);
     } else {
       setState(() {
+        _index = -1;
         score = _score;
         finish = true;
       });
@@ -55,7 +58,6 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       key: ctx,
       appBar: AppBar(
@@ -71,26 +73,37 @@ class _QuizScreenState extends State<QuizScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  const Text("Question:"),
-                  Text(Uri.decodeFull(questions[_index]['question'])),
+                  const Text(
+                    "Question:",
+                    style: TextStyle(
+                      fontSize: 16
+                    )
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    unescape.convert(questions[_index]['question']),
+                    style: TextStyle(
+                      fontSize: 20
+                    )
+                  ),
                   SizedBox(height: 20),
-                  Text("Category: ${Uri.decodeFull(questions[_index]['category'])}"),
+                  Text("Category: ${unescape.convert(questions[_index]['category'])}"),
                   SizedBox(height: 20),
-                  Text("Difficulty: ${Uri.decodeFull(questions[_index]['difficulty'])}"),
+                  Text("Difficulty: ${unescape.convert(questions[_index]['difficulty'])}"),
                   SizedBox(height: 20),
-                  Text("Type:  ${Uri.decodeFull(questions[_index]['type'])}"),
+                  Text("Type:  ${unescape.convert(questions[_index]['type'])}"),
                   SizedBox(height: 20),
                   Text(
-                    "Your Answer:  ${Uri.decodeFull(questions[_index]['selected_answers'] ?? '-')}",
+                    "Your Answer:  ${unescape.convert(questions[_index]['selected_answers'] ?? '-')}",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: finish == false ? Colors.black : (Uri.decodeFull(questions[_index]['selected_answers']) == Uri.decodeFull(questions[_index]['correct_answer']) ? Colors.green : Colors.red)
+                      color: finish == false ? Colors.black : (unescape.convert(questions[_index]['selected_answers']) == unescape.convert(questions[_index]['correct_answer']) ? Colors.green : Colors.red)
                     ),
                   ),
                   SizedBox(height: 20),
                   finish == true
                   ? Text(
-                    "Correct Answer:  ${Uri.decodeFull(questions[_index]['correct_answer'] ?? '-')}",
+                    "Correct Answer:  ${unescape.convert(questions[_index]['correct_answer'] ?? '-')}",
                     style: TextStyle(
                       color: Colors.lightBlue,
                       fontWeight: FontWeight.bold,
@@ -129,31 +142,36 @@ class _QuizScreenState extends State<QuizScreen> {
                         showModalBottomSheet<void>(
                           context: context,
                           builder: (BuildContext context) {
-                            return Container(
-                              height: 43.0 * questions[_index]['incorrect_answers'].length.toDouble(),
-                              color: Colors.white,
-                              child: ListView.builder(
-                                itemCount: questions[_index]['incorrect_answers'].length,
-                                itemBuilder: (BuildContext context, int idx) {
-                                  final String answer = Uri.decodeFull('${questions[_index]['incorrect_answers'][idx]}');
-                                  return SizedBox(
-                                    height: 40,
-                                    child: ListTile(
-                                      title: Text(answer),
-                                      leading: Radio<String>(
-                                        value: answer,
-                                        groupValue: questions[_index]['selected_answers'],
-                                        onChanged: (String? value) {
-                                          questions[_index]['selected_answers'] = value;
-                                          setState(() { questions = questions; });
-                                          Navigator.pop(context);
-                                        },
-                                      ),
-                                    )
-                                  );
-                                }
-                              ),
-                            );
+                            return StatefulBuilder(
+                              builder: (BuildContext context, StateSetter _setState) {
+                                return Container(
+                                  width: double.infinity,
+                                  height: 43.0 * questions[_index]['incorrect_answers'].length.toDouble(),
+                                  color: Colors.white,
+                                  child: ListView.builder(
+                                    itemCount: questions[_index]['incorrect_answers'].length,
+                                    itemBuilder: (BuildContext context, int idx) {
+                                      final String answer = unescape.convert('${questions[_index]['incorrect_answers'][idx]}');
+                                      return SizedBox(
+                                        height: 40,
+                                        child: ListTile(
+                                          title: Text(answer),
+                                          leading: Radio<String>(
+                                            value: answer,
+                                            groupValue: questions[_index]['selected_answers'],
+                                            onChanged: (String? value) {
+                                              questions[_index]['selected_answers'] = value;
+                                              setState(() { questions = questions; });
+                                              _setState(() { questions = questions; });
+                                              //Navigator.pop(context);
+                                            },
+                                          ),
+                                        )
+                                      );
+                                    }
+                                  ),
+                                );
+                            });
                           },
                         );
                       } else {

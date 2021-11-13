@@ -67,7 +67,7 @@ class Api {
     if (token != null) {
       query['token'] = token;
     }
-    query['encode'] = 'url3986';
+    //query['encode'] = 'base64';
     final url = Uri.https(baseUrl, api, query);
     return await http.get(makeUrl(url.toString()));
   }
