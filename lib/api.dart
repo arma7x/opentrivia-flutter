@@ -48,13 +48,10 @@ class Api {
   }
   
   static Future getCategory() async {
-    // List<Map<int, String>>
     final url = Uri.https(baseUrl, apiCategory);
     return await http.get(makeUrl(url.toString()));
   }
 
-  // type => multiple, boolean
-  // difficulty => easy, medium, hard
   static Future generateQuiz(int amount, {String? category, String? type, String? difficulty, String? token}) async {
     Map<String, String> query = {};
     query['amount'] = amount.toString();
