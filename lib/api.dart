@@ -10,31 +10,29 @@ class Api {
   static const String apiToken = 'api_token.php';
   static const String apiCategory = 'api_category.php';
 
+  static Future generateToken() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    Map<String, String> query = {'command': 'request'};
+    final response = await http.get(makeUrl(Uri.https(baseUrl, apiToken, query).toString()));
+    if (response.statusCode == 200) {
+      final responseBody = json.decode(response.body);
+      await prefs.setString('TOKEN', responseBody['token']);
+      await prefs.setInt('TIMESTAMP', DateTime.now().millisecondsSinceEpoch);
+      return await Future<String>.value(responseBody['token']);
+    } else {
+      return await Future<void>.value(null);
+    }
+  }
+
   static Future getToken() async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('TOKEN');
       int? timestamp = prefs.getInt('TIMESTAMP');
       if (timestamp == null) {
-        Map<String, String> query = {'command': 'request'};
-        final response = await http.get(Uri.https(baseUrl, apiToken, query));
-        if (response.statusCode == 200) {
-          final responseBody = json.decode(response.body);
-          await prefs.setString('TOKEN', responseBody['token']);
-          await prefs.setInt('TIMESTAMP', DateTime.now().millisecondsSinceEpoch);
-          return await Future<String>.value(responseBody['token']);
-        } else {
-          return await Future<void>.value(null);
-        }
+        return await generateToken();
       } else if (DateTime.now().millisecondsSinceEpoch - timestamp >= 18000000) {
-        Map<String, String> query = {'command': 'reset', 'token': token!};
-        final response = await http.get(Uri.https(baseUrl, apiToken, query));
-        if (response.statusCode == 200) {
-          await prefs.setInt('TIMESTAMP', DateTime.now().millisecondsSinceEpoch);
-          return await Future<String>.value(token);
-        } else {
-          return await Future<void>.value(null);
-        }
+        return await generateToken();
       }
       return await Future<String>.value(token);
     } on Exception {

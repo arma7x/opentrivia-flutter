@@ -44,6 +44,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Map<String, dynamic> category = {};
   Map<String, String> difficulty = {};
   Map<String, String> type = {};
+  String? token;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -54,6 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
     difficulty = difficulties[0];
     type = types[0];
     getCategory();
+    getToken();
   }
 
   void _loadingDialog(bool show) {
@@ -69,6 +71,16 @@ class _MyHomePageState extends State<MyHomePage> {
       );
     } else {
       Navigator.of(context).pop();
+    }
+  }
+
+  void getToken() async {
+    try {
+      String? _token = await Api.getToken();
+      setState(() { token = _token; });
+      // print(token);
+    } on Exception catch(e) {
+      // print(e);
     }
   }
 
@@ -95,7 +107,7 @@ class _MyHomePageState extends State<MyHomePage> {
         Scaffold.of(context).showSnackBar(snackBar);
       }
     } on Exception catch(e) {
-      print(e);
+      // print(e);
       setState(() {
         _loading = false;
       });
@@ -112,6 +124,7 @@ class _MyHomePageState extends State<MyHomePage> {
         category: category['id'] == 'any' ? null : category['id'].toString(),
         difficulty: difficulty['id'] == 'any' ? null : difficulty['id'].toString(),
         type: type['id'] == 'any' ? null : type['id'].toString(),
+        token: token
       );
       final Map<String, dynamic> responseBody = json.decode(response.body);
       if (responseBody['results'].length > 0) {
@@ -136,7 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     } on Exception catch(e) {
       _loadingDialog(false);
-      print(e);
+      // print(e);
       final snackBar = SnackBar(content: Text('Network Error'));
       Scaffold.of(context).showSnackBar(snackBar);
     }
